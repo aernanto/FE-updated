@@ -1,48 +1,49 @@
 <template>
-  <div class="container" v-if="pkg">
-    <div class="head-section">
-      <button @click="$router.push('/packages')" class="back">← Packages</button>
-      <div class="title-area">
-         <h1>{{ pkg.packageName }}</h1>
-         <span :class="['badge', pkg.status]">{{ pkg.status }}</span>
-      </div>
-      <div class="meta-grid">
-         <div><strong>Start:</strong> {{ pkg.startDate }}</div>
-         <div><strong>End:</strong> {{ pkg.endDate }}</div>
-         <div><strong>Quota:</strong> {{ pkg.quota }} pax</div>
-         <div class="price"><strong>Price:</strong> Rp {{ formatMoney(pkg.price) }}</div>
-      </div>
+  <div class="max-w-5xl mx-auto" v-if="pkg">
+    <button @click="$router.push('/packages')" class="mb-4 text-blue-600 font-bold">← Back</button>
 
-      <div v-if="pkg.status === 'Pending'" class="pkg-actions">
-         <button @click="processPkg" class="btn-proc">✅ Process Package</button>
-         <button @click="$router.push(`/packages/${pkg.id}/plans/create`)" class="btn-add">+ Add Plan</button>
+    <div class="bg-white p-6 rounded-xl shadow-sm border mb-8">
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-3xl font-bold">{{ pkg.packageName }}</h1>
+        <span :class="['px-3 py-1 rounded font-bold', pkg.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800']">{{ pkg.status }}</span>
+      </div>
+      <div class="grid grid-cols-2 gap-4 text-gray-600">
+         <p>💰 Total: <span class="text-green-600 font-bold">Rp {{ formatMoney(pkg.price) }}</span></p>
+         <p>👥 Quota: {{ pkg.quota }}</p>
+         <p>📅 Start: {{ formatDate(pkg.startDate) }}</p>
+         <p>🏁 End: {{ formatDate(pkg.endDate) }}</p>
+      </div>
+      <div v-if="pkg.status === 'Pending'" class="mt-6 flex gap-3">
+         <button @click="process" class="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700">Process Package</button>
+         <button @click="$router.push(`/packages/${pkg.id}/plans/create`)" class="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700">+ Add Plan</button>
       </div>
     </div>
 
-    <hr class="divider"/>
+    <h2 class="text-2xl font-bold mb-4">🗓️ Plans & Activities</h2>
+    <div v-if="pkg.plans.length === 0" class="text-center p-8 bg-gray-100 rounded text-gray-500">No plans yet.</div>
 
-    <h3>🗓️ Plans & Activities</h3>
-    <div v-if="!pkg.plans || pkg.plans.length === 0" class="empty">No plans yet. Add one above.</div>
+    <div class="space-y-4">
+      <div v-for="plan in pkg.plans" :key="plan.id" class="bg-white p-5 rounded-lg shadow border">
+        <div class="flex justify-between border-b pb-2 mb-3">
+           <h3 class="font-bold text-lg text-blue-800">{{ plan.activityType }}</h3>
+           <span class="text-green-600 font-bold">Rp {{ formatMoney(plan.price) }}</span>
+        </div>
+        <p class="text-sm mb-3">📍 {{ plan.startLocation }} ➔ {{ plan.endLocation }}</p>
 
-    <div v-else class="plans-container">
-      <div v-for="plan in pkg.plans" :key="plan.id" class="plan-card">
-         <div class="plan-header">
-            <h4>{{ plan.activityType }} <span class="tiny-badge">{{ plan.status }}</span></h4>
-            <span class="plan-price">Rp {{ formatMoney(plan.price) }}</span>
-         </div>
-         <p class="loc">📍 {{ plan.startLocation }} ➔ {{ plan.endLocation }}</p>
+        <div v-if="plan.status === 'Pending'" class="flex gap-2 mb-3">
+           <button @click="linkAct(plan.id)" class="bg-blue-50 text-blue-700 px-3 py-1 rounded text-sm border border-blue-200 font-bold">🔗 Add Activity</button>
+           <button @click="delPlan(plan.id)" class="bg-red-50 text-red-700 px-3 py-1 rounded text-sm border border-red-200 font-bold">Delete Plan</button>
+        </div>
 
-         <div v-if="plan.status === 'Pending'" class="plan-ctrl">
-            <button @click="goToLinkActivity(plan.id)" class="btn-sm link">🔗 Link Activity</button>
-            <button @click="delPlan(plan.id)" class="btn-sm del">🗑️</button>
-         </div>
-
-         <div v-if="plan.orderedQuantities?.length > 0" class="activities-list">
-            <div v-for="oq in plan.orderedQuantities" :key="oq.id" class="activity-row">
-               <span>🔹 {{ oq.activityName }} ({{ oq.activityItem }})</span>
-               <span>x{{ oq.orderedQuota }}</span>
-            </div>
-         </div>
+        <div v-if="plan.orderedQuantities.length > 0" class="bg-gray-50 p-3 rounded">
+           <div v-for="oq in plan.orderedQuantities" :key="oq.id" class="flex justify-between text-sm py-1 border-b border-gray-200 last:border-0">
+              <span>{{ oq.activityName }} (x{{ oq.orderedQuota }})</span>
+              <div class="flex items-center gap-2">
+                 <span>Rp {{ formatMoney(oq.price * oq.orderedQuota) }}</span>
+                 <button v-if="plan.status === 'Pending'" @click="delOq(oq.id)" class="text-red-500 font-bold">×</button>
+              </div>
+           </div>
+        </div>
       </div>
     </div>
   </div>
@@ -51,71 +52,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import packageService from '@/services/packageService';
-import planService from '@/services/planService';
+import { api } from '@/services/api';
+import type { Package } from '@/types';
 
-const route = useRoute();
-const router = useRouter();
-const pkg = ref<any>(null);
+const route = useRoute(); const router = useRouter();
+const pkg = ref<Package | null>(null);
 
-const load = async () => {
-  try {
-    // Fetch detail package include plans & OQ
-    const res = await packageService.getPackageById(route.params.id as string);
-    pkg.value = res.data;
-  } catch { alert("Failed to load package detail."); }
-};
+const load = async () => { try { const res = await api.getPackageById(route.params.id as string); pkg.value = res.data; } catch { alert("Error"); } };
+const process = async () => { if(confirm("Process?")) { await api.processPackage(pkg.value!.id); load(); } };
+const delPlan = async (id: string) => { if(confirm("Delete plan?")) { await api.deletePlan(id); load(); } };
+const delOq = async (id: string) => { if(confirm("Remove activity?")) { await api.deleteOrderedQuantity(id); load(); } };
+const linkAct = (pid: string) => router.push(`/packages/${pkg.value!.id}/plans/${pid}/ordered-quantity/create`);
+const formatMoney = (n: number) => n.toLocaleString('id-ID');
+const formatDate = (d: string) => new Date(d).toLocaleDateString();
 
-const processPkg = async () => {
-  if(!confirm('Are you sure you want to PROCESS this package? Bill will be generated.')) return;
-  try {
-    await packageService.processPackage(pkg.value.id);
-    alert("Success! Package Processed.");
-    load();
-  } catch(e: any) {
-    alert("Failed: " + (e.response?.data?.message || "Plans not fulfilled?"));
-  }
-};
-
-const delPlan = async (id: string) => {
-  if(confirm('Delete this plan?')) {
-    await planService.deletePlan(id);
-    load();
-  }
-};
-
-const goToLinkActivity = (planId: string) => {
-    router.push(`/packages/${pkg.value.id}/plans/${planId}/ordered-quantity/create`);
-};
-
-const formatMoney = (v: number) => new Intl.NumberFormat('id-ID').format(v || 0);
 onMounted(load);
 </script>
-
-<style scoped>
-.container { max-width: 900px; margin: 20px auto; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: sans-serif; }
-.head-section { margin-bottom: 20px; }
-.title-area { display: flex; align-items: center; justify-content: space-between; }
-.badge { padding: 6px 12px; border-radius: 6px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem;}
-.badge.Pending { background: #fff7ed; color: #c2410c; }
-.badge.Processed { background: #dcfce7; color: #15803d; }
-.meta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; }
-.price { color: #2563eb; font-size: 1.1rem; }
-.pkg-actions { margin-top: 20px; display: flex; gap: 10px; }
-.btn-proc { background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-.btn-add { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-.divider { margin: 30px 0; border: 0; border-top: 1px solid #eee; }
-.plans-container { display: grid; gap: 20px; }
-.plan-card { border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; background: white; }
-.plan-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; }
-.tiny-badge { font-size: 0.7rem; background: #eee; padding: 2px 6px; border-radius: 4px; font-weight: normal; margin-left: 5px; }
-.plan-price { color: #10b981; }
-.loc { color: #64748b; margin: 5px 0; font-size: 0.9rem; }
-.plan-ctrl { margin: 10px 0; display: flex; gap: 10px; }
-.btn-sm { padding: 5px 10px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
-.btn-sm.link { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-.btn-sm.del { background: #fef2f2; color: #ef4444; border-color: #fecaca; }
-.activities-list { margin-top: 15px; background: #f1f5f9; padding: 10px; border-radius: 6px; }
-.activity-row { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 4px 0; border-bottom: 1px solid #e2e8f0; }
-.back { background: none; border: none; color: #64748b; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
-</style>

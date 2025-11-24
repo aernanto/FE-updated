@@ -32,6 +32,7 @@ export default defineComponent({
         const response = await orderedQuantityService.getOrderedQuantityById(this.orderedQuantityId);
         this.orderedQuantity = response.data!;
         this.newQuota = this.orderedQuantity.orderedQuota;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         this.error = err.message || 'Failed to load ordered quantity';
       }
@@ -48,6 +49,7 @@ export default defineComponent({
       try {
         await orderedQuantityService.updateOrderedQuantity(this.orderedQuantityId, this.newQuota);
         this.$router.push(`/plans/${this.orderedQuantity!.planId}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         this.error = err.message || 'Failed to update ordered quantity';
       } finally {
