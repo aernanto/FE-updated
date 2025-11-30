@@ -74,10 +74,10 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="create-container">
-    <div class="create-header">
-      <h1>Add Activity to Plan</h1>
-      <button @click="handleCancel" class="btn-back">
+  <div class="page-container">
+    <div class="page-header">
+      <h1 class="heading-1">Add Activity to Plan</h1>
+      <button @click="handleCancel" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> Back to Plan
       </button>
     </div>
@@ -87,124 +87,91 @@ export default defineComponent({
       {{ error }}
     </div>
 
-    <form @submit.prevent="handleSubmit" class="create-form">
-      <div class="form-group">
-        <label for="activityId">Select Activity *</label>
-        <select
-          id="activityId"
-          v-model="formData.activityId"
-          @change="onActivityChange"
-          required
-          class="form-control"
-        >
-          <option value="">-- Select Activity --</option>
-          <option
-            v-for="activity in activities"
-            :key="activity.id"
-            :value="activity.id"
-          >
-            {{ activity.activityName }} - {{ activity.activityItem }}
-          </option>
-        </select>
-      </div>
+    <div class="card form-card">
+      <form @submit.prevent="handleSubmit" class="form-content">
+        <div class="input-group">
+          <label class="label" for="activityId">Select Activity *</label>
+          <select id="activityId" v-model="formData.activityId" @change="onActivityChange" required
+            class="input select">
+            <option value="">-- Select Activity --</option>
+            <option v-for="activity in activities" :key="activity.id" :value="activity.id">
+              {{ activity.activityName }} - {{ activity.activityItem }}
+            </option>
+          </select>
+        </div>
 
-      <div v-if="selectedActivity" class="activity-info">
-        <h3>Activity Details</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label">Type:</span>
-            <span class="value">{{ selectedActivity.activityType }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Available Capacity:</span>
-            <span class="value">{{ selectedActivity.capacity }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Price per Unit:</span>
-            <span class="value">Rp {{ selectedActivity.price.toLocaleString('id-ID') }}</span>
+        <div v-if="selectedActivity" class="info-section">
+          <h3 class="heading-3">Activity Details</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Type:</span>
+              <span class="value">{{ selectedActivity.activityType }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Available Capacity:</span>
+              <span class="value">{{ selectedActivity.capacity }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Price per Unit:</span>
+              <span class="value">Rp {{ selectedActivity.price.toLocaleString('id-ID') }}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="orderedQuota">Ordered Quota *</label>
-        <input
-          id="orderedQuota"
-          v-model.number="formData.orderedQuota"
-          type="number"
-          :min="1"
-          :max="maxQuota"
-          required
-          class="form-control"
-          placeholder="Enter quantity"
-        />
-        <small v-if="selectedActivity">Max: {{ maxQuota }}</small>
-      </div>
+        <div class="input-group">
+          <label class="label" for="orderedQuota">Ordered Quota *</label>
+          <input id="orderedQuota" v-model.number="formData.orderedQuota" type="number" :min="1" :max="maxQuota"
+            required class="input" placeholder="Enter quantity" />
+          <small class="helper-text" v-if="selectedActivity">Max: {{ maxQuota }}</small>
+        </div>
 
-      <div v-if="selectedActivity && formData.orderedQuota > 0" class="total-price">
-        <span>Total Price:</span>
-        <span class="price">
-          Rp {{ (selectedActivity.price * formData.orderedQuota).toLocaleString('id-ID') }}
-        </span>
-      </div>
+        <div v-if="selectedActivity && formData.orderedQuota > 0" class="total-price-card">
+          <span class="total-label">Total Price:</span>
+          <span class="total-value">
+            Rp {{ (selectedActivity.price * formData.orderedQuota).toLocaleString('id-ID') }}
+          </span>
+        </div>
 
-      <div class="form-actions">
-        <button type="button" @click="handleCancel" class="btn btn-secondary">
-          Cancel
-        </button>
-        <button type="submit" :disabled="loading" class="btn btn-primary">
-          <i class="fas fa-plus"></i>
-          {{ loading ? 'Adding...' : 'Add Activity' }}
-        </button>
-      </div>
-    </form>
+        <div class="form-actions">
+          <button type="button" @click="handleCancel" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button type="submit" :disabled="loading" class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            {{ loading ? 'Adding...' : 'Add Activity' }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.create-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.create-header {
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-lg);
 }
 
-.create-header h1 {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #111827;
+.form-card {
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.btn-back {
+.form-content {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  color: #374151;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-back:hover {
-  background: #f3f4f6;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
 .alert {
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 24px;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-sm);
 }
 
 .alert-error {
@@ -213,141 +180,73 @@ export default defineComponent({
   color: #991b1b;
 }
 
-.create-form {
-  background: white;
-  padding: 32px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.form-group {
-  margin-bottom: 24px;
-}
-
-.form-group label {
-  display: block;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 8px;
-}
-
-.form-control {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.activity-info {
-  background: #f9fafb;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  border: 1px solid #e5e7eb;
-}
-
-.activity-info h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 16px;
+.info-section {
+  background: var(--background-color);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--spacing-xs);
 }
 
 .info-item .label {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .info-item .value {
   font-size: 1rem;
-  color: #111827;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
-.total-price {
-  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-  padding: 20px;
-  border-radius: 8px;
+.helper-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+  display: block;
+}
+
+.total-price-card {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  border: 2px solid #667eea;
+  border: 2px solid var(--primary-color);
 }
 
-.total-price span:first-child {
+.total-label {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
 }
 
-.total-price .price {
+.total-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #667eea;
+  color: var(--primary-color);
 }
 
 .form-actions {
   display: flex;
-  gap: 12px;
   justify-content: flex-end;
-}
-
-.btn {
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: none;
-}
-
-.btn-secondary {
-  background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-.btn-secondary:hover {
-  background: #f3f4f6;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
 }
 </style>

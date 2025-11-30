@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { authService } from './authService';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -30,9 +31,7 @@ const orderedQuantityService = {
   getOrderedQuantityById: async (id: string): Promise<ApiResponse<OrderedQuantity>> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/ordered-quantities/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: authService.getAuthHeader() as any
       });
       return response.data;
     } catch (error) {
@@ -51,9 +50,9 @@ const orderedQuantityService = {
         data,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            ...authService.getAuthHeader(),
             'Content-Type': 'application/json'
-          }
+          } as any
         }
       );
       return response.data;
@@ -73,9 +72,7 @@ const orderedQuantityService = {
         null,
         {
           params: { newQuota },
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+          headers: authService.getAuthHeader() as any
         }
       );
       return response.data;
@@ -88,9 +85,7 @@ const orderedQuantityService = {
   deleteOrderedQuantity: async (id: string): Promise<ApiResponse<void>> => {
     try {
       const response = await axios.delete(`${API_BASE_URL}/ordered-quantities/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: authService.getAuthHeader() as any
       });
       return response.data;
     } catch (error) {

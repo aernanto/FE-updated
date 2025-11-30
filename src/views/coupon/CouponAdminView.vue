@@ -1,15 +1,29 @@
 <template>
-  <div class="p-6 max-w-xl mx-auto mt-10 bg-white rounded shadow">
-    <h2 class="text-xl font-bold mb-4">Create New Coupon</h2>
-    <form @submit.prevent="save" class="space-y-4">
-      <input v-model="form.name" placeholder="Coupon Name" class="w-full border p-2 rounded" required>
-      <input v-model="form.description" placeholder="Description" class="w-full border p-2 rounded" required>
-      <div class="grid grid-cols-2 gap-4">
-        <input type="number" v-model="form.points" placeholder="Points Cost" class="w-full border p-2 rounded" required>
-        <input type="number" v-model="form.percentOff" placeholder="% Discount" class="w-full border p-2 rounded" step="0.1" required>
-      </div>
-      <button class="w-full bg-blue-600 text-white p-2 rounded font-bold">Create</button>
-    </form>
+  <div class="page-container">
+    <div class="card form-card">
+      <h2 class="heading-2 mb-md">Create New Coupon</h2>
+      <form @submit.prevent="save" class="form-content">
+        <div class="input-group">
+          <label class="label">Coupon Name</label>
+          <input v-model="form.name" placeholder="Coupon Name" class="input" required>
+        </div>
+        <div class="input-group">
+          <label class="label">Description</label>
+          <input v-model="form.description" placeholder="Description" class="input" required>
+        </div>
+        <div class="form-row">
+          <div class="input-group">
+            <label class="label">Points Cost</label>
+            <input type="number" v-model="form.points" placeholder="Points Cost" class="input" required>
+          </div>
+          <div class="input-group">
+            <label class="label">% Discount</label>
+            <input type="number" v-model="form.percentOff" placeholder="% Discount" class="input" step="0.1" required>
+          </div>
+        </div>
+        <button class="btn btn-primary w-full">Create</button>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -26,3 +40,30 @@ const save = async () => {
   catch { alert("Error"); }
 };
 </script>
+
+<style scoped>
+.form-card {
+  max-width: 600px;
+  margin: 2.5rem auto;
+}
+
+.mb-md {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.w-full {
+  width: 100%;
+}
+</style>

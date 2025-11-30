@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { authService } from './authService';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -26,9 +27,7 @@ const planService = {
   getAllPlans: async (): Promise<ApiResponse<Plan[]>> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/plans`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: authService.getAuthHeader() as any
       });
       return response.data;
     } catch (error) {
@@ -41,9 +40,7 @@ const planService = {
   getPlanById: async (id: string | null): Promise<ApiResponse<Plan>> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/plans/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: authService.getAuthHeader() as any
       });
       return response.data;
     } catch (error) {
@@ -56,9 +53,7 @@ const planService = {
   getPlansByPackageId: async (packageId: string | null): Promise<ApiResponse<Plan[]>> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/plans/package/${packageId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: authService.getAuthHeader() as any
       });
       return response.data;
     } catch (error) {
@@ -72,9 +67,9 @@ const planService = {
     try {
       const response = await axios.post(`${API_BASE_URL}/plans`, planData, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          ...authService.getAuthHeader(),
           'Content-Type': 'application/json'
-        }
+        } as any
       });
       return response.data;
     } catch (error) {
@@ -88,9 +83,9 @@ const planService = {
     try {
       const response = await axios.put(`${API_BASE_URL}/plans/${id}`, planData, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          ...authService.getAuthHeader(),
           'Content-Type': 'application/json'
-        }
+        } as any
       });
       return response.data;
     } catch (error) {
@@ -103,9 +98,7 @@ const planService = {
   deletePlan: async (id: string): Promise<ApiResponse<void>> => {
     try {
       const response = await axios.delete(`${API_BASE_URL}/plans/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: authService.getAuthHeader() as any
       });
       return response.data;
     } catch (error) {
