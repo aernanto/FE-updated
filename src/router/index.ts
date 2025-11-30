@@ -1,39 +1,290 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import PackageView from '@/views/package/PackageView.vue'
+import PackagesView from '@/views/package/PackagesView.vue'
+import PackageDetailView from '@/views/package/PackageDetailView.vue'
 import CreatePackageView from '@/views/package/CreatePackageView.vue'
 import EditPackageView from '@/views/package/EditPackageView.vue'
-import PackageDetailView from '@/views/package/PackageDetailView.vue'
-import CreatePlanView from '@/views/plan/CreatePlanView.vue'
-import OrderedQuantityForm from '@/views/ordered-quantity/OrderedQuantityForm.vue'
-import ActivityListView from '@/views/activity/ActivityList.vue'
-import ActivityCreateView from '@/views/activity/CreateActivityView.vue'
-import ActivityEditView from '@/views/activity/EditActivityView.vue'
-import ActivityDetailView from '@/views/activity/ActivityDetailView.vue'
-import StatisticsView from '@/views/statistics/StatisticsView.vue'
-import CouponView from '@/views/coupon/CouponView.vue'
-import CouponAdminView from '@/views/coupon/CouponAdminView.vue'
+import CreatePlanView from '@/views/package/plan/CreatePlanView.vue'
+import DetailPlanView from '@/views/package/plan/DetailPlanView.vue'
+import EditPlanView from '@/views/package/plan/EditPlanView.vue'
+import StatisticView from '@/views/statistic/StatisticView.vue'
+import HomeView from '@/views/HomeView.vue'
+import LoginView from '@/views/auth/LoginView.vue'
+import { getCurrentUser, isAuthenticated, isSuperAdmin, UserRole } from '@/lib/rbac'
+import { toast } from 'vue-sonner'
+import UserManagementView from '@/views/users/UserManagementView.vue'
+import CustomerListView from '@/views/users/CustomerListView.vue'
+import UserDetailView from '@/views/users/UserDetailView.vue'
+import UserEditView from '@/views/users/UserEditView.vue'
+import RegisterView from '@/views/users/RegisterView.vue'
+import ActivitiesView from '@/views/activities/ActivitiesView.vue'
+import CreateActivityView from '@/views/activities/CreateActivityView.vue'
+import ActivityDetailView from '@/views/activities/ActivityDetailView.vue'
+import EditActivityView from '@/views/activities/EditActivityView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/login', component: () => import('@/views/LoginView.vue') },
-    { path: '/', redirect: '/login' },
-    { path: '/packages', component: PackageView },
-    { path: '/packages/create', component: CreatePackageView },
-    { path: '/packages/:id', component: PackageDetailView },
-    { path: '/packages/:id/edit', component: EditPackageView },
-    { path: '/packages/:packageId/plans/create', component: CreatePlanView },
-    { path: '/packages/:packageId/plans/:planId/edit', component: () => import('@/views/plan/EditPlanView.vue') },
-    { path: '/packages/:packageId/plans/:planId/ordered-quantity/create', component: OrderedQuantityForm },
-    { path: '/packages/:packageId/plans/:planId/ordered-quantity/:oqId/edit', component: () => import('@/views/ordered-quantity/EditOrderedQuantityView.vue') },
-    { path: '/activities', component: ActivityListView },
-    { path: '/activities/create', component: ActivityCreateView },
-    { path: '/activities/:id', component: ActivityDetailView },
-    { path: '/activities/edit/:id', component: ActivityEditView },
-    { path: '/statistics', component: StatisticsView },
-    { path: '/coupons', component: CouponView },
-    { path: '/coupons/create', component: CouponAdminView },
-    { path: '/coupons/:id/edit', component: () => import('@/views/coupon/EditCouponView.vue') },
-  ]
+    {
+      path: "/",
+      name: "HomeView",
+      component: HomeView,
+    },
+    {
+      path: "/packages",
+      name: "PackagesView",
+      component: PackagesView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.CUSTOMER,
+          UserRole.TOUR_PACKAGE_VENDOR,
+        ],
+      },
+    },
+    {
+      path: "/packages/:id",
+      name: "PackageDetailView",
+      component: PackageDetailView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.CUSTOMER,
+          UserRole.TOUR_PACKAGE_VENDOR,
+        ],
+      },
+    },
+    {
+      path: "/packages/create",
+      name: "CreatePackageView",
+      component: CreatePackageView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.CUSTOMER,
+          UserRole.TOUR_PACKAGE_VENDOR,
+        ],
+      },
+    },
+    {
+      path: "/packages/:id/edit",
+      name: "EditPackageView",
+      component: EditPackageView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.CUSTOMER,
+          UserRole.TOUR_PACKAGE_VENDOR,
+        ],
+      },
+    },
+    {
+      path: "/packages/:id/plans/create",
+      name: "CreatePlanView",
+      component: CreatePlanView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.CUSTOMER,
+          UserRole.TOUR_PACKAGE_VENDOR,
+        ],
+      },
+    },
+    {
+      path: "/plans/:id",
+      name: "PlanDetail",
+      component: DetailPlanView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.CUSTOMER,
+          UserRole.TOUR_PACKAGE_VENDOR,
+        ],
+      },
+    },
+    {
+      path: "/plans/:id/edit",
+      name: "EditPlanView",
+      component: EditPlanView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.CUSTOMER,
+          UserRole.TOUR_PACKAGE_VENDOR,
+        ],
+      },
+    },
+    {
+      path: "/statistics",
+      name: "StatisticView",
+      component: StatisticView,
+      meta: {
+        requiresAuth: true,
+        roles: [UserRole.SUPERADMIN, UserRole.TOUR_PACKAGE_VENDOR],
+      },
+    },
+    {
+      path: "/login",
+      name: "login",
+      component: LoginView,
+    },
+    {
+      path: "/register",
+      name: "register",
+      component: RegisterView,
+    },
+    {
+      path: "/users",
+      name: "UserManagementView",
+      component: UserManagementView,
+      meta: { requiresAuth: true, roles: [UserRole.SUPERADMIN] },
+    },
+    {
+      path: "/customers",
+      name: "CustomerListView",
+      component: CustomerListView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.FLIGHT_AIRLINE,
+          UserRole.ACCOMMODATION_OWNER,
+          UserRole.RENTAL_VENDOR,
+          UserRole.INSURANCE_PROVIDER,
+          UserRole.TOUR_PACKAGE_VENDOR,
+        ],
+      },
+    },
+    {
+      path: "/profile",
+      name: "MyProfileView",
+      component: UserDetailView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/users/:id",
+      name: "UserDetailView",
+      component: UserDetailView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/users/:id/edit",
+      name: "UserEditView",
+      component: UserEditView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/activities",
+      name: "ActivitiesView",
+      component: ActivitiesView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.TOUR_PACKAGE_VENDOR,
+          UserRole.RENTAL_VENDOR,
+          UserRole.ACCOMMODATION_OWNER,
+          UserRole.FLIGHT_AIRLINE,
+          UserRole.CUSTOMER,
+        ],
+      },
+    },
+    {
+      path: "/activities/create",
+      name: "CreateActivityView",
+      component: CreateActivityView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.TOUR_PACKAGE_VENDOR,
+          UserRole.RENTAL_VENDOR,
+          UserRole.ACCOMMODATION_OWNER,
+          UserRole.FLIGHT_AIRLINE,
+        ],
+      },
+    },
+    {
+      path: "/activities/:id",
+      name: "ActivityDetailView",
+      component: ActivityDetailView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          // sesuai “Detail Activity” di tabel
+          UserRole.CUSTOMER,
+          UserRole.SUPERADMIN,
+          UserRole.TOUR_PACKAGE_VENDOR,
+          UserRole.RENTAL_VENDOR,
+          UserRole.ACCOMMODATION_OWNER,
+          UserRole.FLIGHT_AIRLINE,
+        ],
+      },
+    },
+    {
+      path: "/activities/:id/edit",
+      name: "EditActivityView",
+      component: EditActivityView,
+      meta: {
+        requiresAuth: true,
+        roles: [
+          UserRole.SUPERADMIN,
+          UserRole.TOUR_PACKAGE_VENDOR,
+          UserRole.RENTAL_VENDOR,
+          UserRole.ACCOMMODATION_OWNER,
+          UserRole.FLIGHT_AIRLINE,
+        ],
+      },
+    },
+  ],
 })
-export default router
+
+export default router;
+
+router.beforeEach((to, from, next) => {
+  const publicPaths = new Set<string>(["/", "/login", "/register"]);
+  const auth = isAuthenticated();
+
+  // Public routes
+  if (publicPaths.has(to.path)) {
+    // kalau sudah login, jangan balik ke login/register
+    if ((to.path === "/login" || to.path === "/register") && auth) {
+      return next("/");
+    }
+    return next();
+  }
+
+  // Non-public → butuh auth
+  if (!auth) {
+    toast.error("Session expired. Please log in again.");
+    return next("/login");
+  }
+
+  const currentUser = getCurrentUser();
+  const roleUpper = currentUser?.roleName?.toUpperCase();
+  const isSuperAdminUser = roleUpper === UserRole.SUPERADMIN;
+
+  // Role-based access jika meta.roles ada
+  const allowedRoles = to.meta.roles as string[] | undefined;
+  if (allowedRoles && roleUpper && !allowedRoles.includes(roleUpper)) {
+    toast.error("You are not authorized to view this page");
+    return next("/");
+  }
+
+  // Unauthorized access ke profil orang lain (kecuali SuperAdmin)
+  if ((to.name === "UserDetailView" || to.name === "UserEditView") && !isSuperAdminUser) {
+    const paramId = to.params.id as string | undefined;
+    if (paramId && currentUser && paramId !== currentUser.id) {
+      toast.error("Unauthorized access to another user's profile");
+      return next("/profile");
+    }
+  }
+
+  next();
+});

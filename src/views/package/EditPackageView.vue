@@ -1,185 +1,183 @@
-<template>
-    <div class="page-container">
-        <div class="page-header">
-            <h1 class="heading-1">Edit Package</h1>
-            <button @click="$router.push('/packages')" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back
-            </button>
-        </div>
+<script setup>
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { usePackageStore } from "@/stores/package.store";
+import { RouterLink } from "vue-router";
+import { computed } from "vue";
 
-        <div v-if="loading" class="loading-state">
-            <div class="spinner"></div>
-            <p>Loading package details...</p>
-        </div>
-
-        <div v-else class="card form-card">
-            <form @submit.prevent="save" class="form-content">
-                <div class="input-group">
-                    <label class="label">Package Name</label>
-                    <input v-model="form.packageName" class="input" required>
-                </div>
-
-                <div class="form-row">
-                    <div class="input-group">
-                        <label class="label">Quota</label>
-                        <input v-model.number="form.quota" type="number" min="1" class="input" required>
-                    </div>
-                    <div class="input-group">
-                        <label class="label">Base Price (IDR)</label>
-                        <input v-model.number="form.price" type="number" min="0" class="input" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="input-group">
-                        <label class="label">Start Date</label>
-                        <input v-model="form.startDate" type="date" class="input" required>
-                    </div>
-                    <div class="input-group">
-                        <label class="label">End Date</label>
-                        <input v-model="form.endDate" type="date" class="input" required>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" @click="$router.push('/packages')" class="btn btn-secondary">Cancel</button>
-                    <button type="submit" :disabled="saving" class="btn btn-primary">
-                        <span v-if="saving" class="spinner-sm"></span>
-                        Update Package
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { api } from '@/services/api';
-import { useRoute, useRouter } from 'vue-router';
-
-const route = useRoute();
 const router = useRouter();
-const loading = ref(true);
-const saving = ref(false);
+const route = useRoute();
+const packageStore = usePackageStore();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const form = ref<any>({
-    packageName: '',
-    quota: 10,
-    price: 0,
-    startDate: '',
-    endDate: ''
+const packageDetail = computed(() => packageStore.selectedPackage);
+
+const form = ref({
+  packageName: "",
+  userId: "",
+  startDate: "",
+  endDate: "",
+  quota: 0,
 });
+const isPending = ref(false);
+const hasPlans = ref(false);
 
 onMounted(async () => {
-    try {
-        const res = await api.getPackageById(route.params.id as string);
-        const data = res.data;
-        form.value = {
-            ...data,
-            startDate: data.startDate ? data.startDate.substring(0, 10) : '',
-            endDate: data.endDate ? data.endDate.substring(0, 10) : ''
-        };
-    } catch (err) {
-        console.error(err);
-        alert("Failed to load package");
-        router.push('/packages');
-    } finally {
-        loading.value = false;
-    }
+  await packageStore.getPackageById(route.params.id);
+  const pkg = packageStore.selectedPackage;
+  if (!pkg) return;
+
+  form.value = {
+    packageName: pkg.packageName,
+    userId: pkg.userId,
+    startDate: pkg.startDate?.slice(0, 16),
+    endDate: pkg.endDate?.slice(0, 16),
+    quota: pkg.quota,
+  };
+
+  isPending.value = pkg.status === "Pending";
+  hasPlans.value = pkg.plans && pkg.plans.length > 0;
 });
 
-const save = async () => {
-    if (form.value.price < 0) return alert("Price must be >= 0");
-    if (form.value.quota <= 0) return alert("Quota must be > 0");
-    if (new Date(form.value.startDate) >= new Date(form.value.endDate)) return alert("Start date must be before end date");
-    if (new Date(form.value.startDate) < new Date()) return alert("Start date must be in the future");
+const handleUpdate = async () => {
+  if (!isPending.value) {
+    alert("❌ Only packages with status 'Pending' can be updated.");
+    return;
+  }
+  if (hasPlans.value) {
+    alert("❌ Cannot update a package that already has plans.");
+    return;
+  }
+  if (new Date(form.value.endDate) < new Date(form.value.startDate)) {
+    alert("❌ End Date cannot be before Start Date.");
+    return;
+  }
 
-    saving.value = true;
-    try {
-        await api.updatePackage(route.params.id as string, form.value);
-        alert("Package updated successfully");
-        router.push('/packages');
-    } catch (err: any) {
-        console.error(err);
-        alert(err.response?.data?.message || 'Error updating package');
-    } finally {
-        saving.value = false;
-    }
+  try {
+    await packageStore.updatePackage(route.params.id, {
+      packageName: form.value.packageName,
+      startDate: form.value.startDate,
+      endDate: form.value.endDate,
+      quota: form.value.quota,
+    });
+    alert("✅ Package updated successfully!");
+    router.push(`/packages/${route.params.id}`);
+  } catch (err) {
+    alert(`Error: ${err.response?.data?.error || err.message}`);
+  }
 };
 </script>
 
-<style scoped>
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-lg);
-}
+<template>
+  <main class="flex flex-col px-20 pt-10">
+    <RouterLink to="/packages" class="text-sm text-indigo-700 mb-3 hover:underline">← Back</RouterLink>
+    <h1 class="text-3xl font-semibold text-gray-800 mb-6">Edit Package</h1>
 
-.form-card {
-    max-width: 800px;
-    margin: 0 auto;
-}
+    <div class="bg-white shadow-md rounded-2xl overflow-hidden">
+      <div class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 text-lg font-semibold">
+        Package Information
+      </div>
 
-.form-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-}
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-gray-700 mb-1">Package Name *</label>
+          <input v-model="form.packageName" type="text"
+                 class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
+        </div>
 
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-lg);
-}
+        <div>
+          <label class="block text-gray-700 mb-1">User ID *</label>
+          <input v-model="form.userId" type="text" disabled
+                 class="w-full bg-gray-100 border rounded-lg px-3 py-2 text-gray-500" />
+        </div>
 
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-lg);
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--border-color);
-}
+        <div class="flex gap-6">
+          <div class="flex-1">
+            <label class="block text-gray-700 mb-1">Start Date *</label>
+            <input v-model="form.startDate" type="datetime-local"
+                   class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div class="flex-1">
+            <label class="block text-gray-700 mb-1">End Date *</label>
+            <input v-model="form.endDate" type="datetime-local"
+                   class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
 
-.loading-state {
-    text-align: center;
-    padding: var(--spacing-xl);
-}
+        <div>
+          <label class="block text-gray-700 mb-1">Quota *</label>
+          <input v-model="form.quota" type="number" min="1"
+                 class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
+        </div>
 
-.spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid var(--primary-color);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto var(--spacing-md);
-}
+        <div class="flex justify-end">
+          <button
+            @click="handleUpdate"
+            :disabled="!isPending || hasPlans"
+            class="px-5 py-2 rounded-lg font-semibold transition-all"
+            :class="[
+              (!isPending || hasPlans)
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90',
+            ]"
+          >
+            Update Package
+          </button>
+        </div>
+      </div>
+    </div>
 
-.spinner-sm {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid #ffffff;
-    border-radius: 50%;
-    border-top-color: transparent;
-    animation: spin 1s linear infinite;
-    margin-right: var(--spacing-sm);
-}
+    <!-- Manage Plans -->
+    <div class="bg-white shadow-md rounded-2xl mt-8 overflow-hidden">
+      <div
+        class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 flex justify-between items-center"
+      >
+        <span class="font-semibold text-lg">Manage Plans</span>
+        <RouterLink v-if="isPending" :to="`/packages/${route.params.id}/plans/create`">
+          <button
+            class="bg-white text-purple-700 font-semibold px-4 py-2 rounded-lg shadow hover:bg-purple-50 transition-all"
+          >
+            Create New Plan
+          </button>
+        </RouterLink>
+      </div>
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
 
-@media (max-width: 640px) {
-    .form-row {
-        grid-template-columns: 1fr;
-        gap: var(--spacing-md);
-    }
-}
-</style>
+      <div class="p-6 text-gray-600">
+        <p v-if="!packageStore.selectedPackage?.plans?.length">No plans available.</p>
+        <table v-else class="w-full border text-sm">
+          <thead class="bg-indigo-50 text-indigo-800">
+            <tr>
+              <th class="p-2 text-left">Plan Name</th>
+              <th class="p-2 text-left">Activity Type</th>
+              <th class="p-2 text-left">Price</th>
+              <th class="p-2 text-left">Start Date</th>
+              <th class="p-2 text-left">End Date</th>
+              <th class="p-2 text-left">Start Location</th>
+              <th class="p-2 text-left">End Location</th>
+              <th class="p-2 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="plan in packageStore.selectedPackage.plans" :key="plan.id" class="border-t">
+              <td class="p-2">{{ plan.planName }}</td>
+              <td class="p-2">{{ plan.activityType }}</td>
+              <td class="p-2">Rp {{ new Intl.NumberFormat("id-ID").format(plan.price) }}</td>
+              <td class="p-2">{{ new Date(plan.startDate).toLocaleString("id-ID") }}</td>
+              <td class="p-2">{{ new Date(plan.endDate).toLocaleString("id-ID") }}</td>
+              <td class="p-2">{{ plan.startLocation }}</td>
+              <td class="p-2">{{ plan.endLocation }}</td>
+              <td class="p-2 text-center">
+                <span class="px-2 py-1 rounded-xl font-semibold"
+                      :class="plan.status === 'fulfilled'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'">
+                  {{ plan.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</template>
