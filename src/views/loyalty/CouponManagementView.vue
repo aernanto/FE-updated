@@ -63,7 +63,7 @@
     <!-- Create/Edit Modal -->
     <div
       v-if="showCreateModal || showEditModal"
-      class="fixed inset-0 bg-black/40 flex justify-center items-center z-50"
+      class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
     >
       <div class="bg-white rounded-2xl shadow-xl w-[500px] p-6">
         <div class="flex justify-between items-center mb-4">
@@ -98,7 +98,7 @@
               rows="3"
               class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
               placeholder="Describe the coupon..."
-            />
+            ></textarea>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -149,7 +149,8 @@
 
 <script setup lang="ts">
 import { onMounted, computed, ref, reactive } from "vue";
-import { useLoyaltyStore, type CreateCouponRequest, type Coupon } from "@/stores/loyalty.store";
+import { useLoyaltyStore } from "@/stores/loyalty.store";
+import type { CreateCouponRequest, Coupon } from "@/stores/loyalty.store";
 
 const loyaltyStore = useLoyaltyStore();
 
@@ -200,8 +201,9 @@ const handleSubmit = async () => {
 
     closeModal();
     await loyaltyStore.fetchCoupons();
-  } catch {
+  } catch (error) {
     // Error already handled in store
+    console.error('Submit error:', error);
   }
 };
 

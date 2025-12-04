@@ -76,11 +76,7 @@
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 "
               >
-                {{
-                  dashboard.balance.points >= coupon.points
-                    ? 'Purchase'
-                    : 'Insufficient Points'
-                }}
+                {{ dashboard.balance.points >= coupon.points ? 'Purchase' : 'Insufficient Points' }}
               </button>
             </div>
           </div>
@@ -141,7 +137,7 @@
 
 <script setup lang="ts">
 import { onMounted, computed } from "vue";
-import { useLoyaltyStore, type Coupon } from "@/stores/loyalty.store";
+import { useLoyaltyStore } from "@/stores/loyalty.store";
 import { getCurrentUser } from "@/lib/auth";
 import { toast } from "vue-sonner";
 
@@ -162,7 +158,7 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-const handlePurchase = async (coupon: Coupon): Promise<void> => {
+const handlePurchase = async (coupon: any) => {
   if (!currentUser?.id) {
     toast.error("User not found");
     return;
