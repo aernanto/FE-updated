@@ -1,6 +1,6 @@
 <template>
   <nav class="bg-white shadow sticky top-0 z-50">
-    <!-- NAVBAR V1: Home / Activities / Packages / Statistics -->
+    <!-- NAVBAR V1: Home / Activities / Packages / Statistics / Loyalty -->
     <div
       v-if="!isProfileSection"
       class="max-w-7xl mx-auto px-8 py-4 flex justify-between items-center"
@@ -52,6 +52,16 @@
           :class="getActive('/statistics')"
         >
           Statistics
+        </RouterLink>
+
+        <!-- LOYALTY (Customer only) -->
+        <RouterLink
+          v-if="isCustomer()"
+          to="/loyalty"
+          class="hover:text-purple-600 transition-all"
+          :class="getActive('/loyalty')"
+        >
+          Loyalty
         </RouterLink>
       </div>
 
@@ -110,6 +120,16 @@
         >
           Customers
         </RouterLink>
+
+        <!-- COUPON MANAGEMENT (Superadmin only) -->
+        <RouterLink
+          v-if="isSuperAdmin()"
+          to="/loyalty/coupons/manage"
+          class="hover:text-purple-600 transition-all"
+          :class="getActive('/loyalty/coupons/manage')"
+        >
+          Coupon Management
+        </RouterLink>
       </div>
 
       <div v-if="isAuthenticated()">
@@ -153,15 +173,12 @@ const isProfileSection = computed(() => {
   return (
     route.path.startsWith("/profile") ||
     route.path.startsWith("/users") ||
-    route.path.startsWith("/customers")
+    route.path.startsWith("/customers") ||
+    route.path.startsWith("/loyalty/coupons/manage")
   );
 });
 
-//
-// ✅ RBAC navigation logic
-//
-
-// ACTIVITIES
+// RBAC navigation logic
 const canSeeActivities = computed(() =>
   isSuperAdmin() ||
   isTourPackageVendor() ||
@@ -171,22 +188,18 @@ const canSeeActivities = computed(() =>
   isCustomer()
 );
 
-// PACKAGES
 const canSeePackages = computed(() =>
   isSuperAdmin() ||
   isCustomer() ||
   isTourPackageVendor()
 );
 
-// STATISTICS
 const canSeeStatistics = computed(() =>
   isSuperAdmin() || isTourPackageVendor()
 );
 
-// USER MANAGEMENT
 const canSeeUserManagement = computed(() => isSuperAdmin());
 
-// CUSTOMERS
 const canSeeCustomerList = computed(() =>
   isSuperAdmin() ||
   isFlightAirline() ||

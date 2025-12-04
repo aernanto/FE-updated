@@ -3,14 +3,11 @@ import type { CommonResponseInterface } from '@/interface/common.response.interf
 import { defineStore } from 'pinia';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
-
-import {
-  setLocalStorage,
-  clearLocalStorage
-} from '@/lib/auth';
+import { setLocalStorage, clearLocalStorage } from '@/lib/auth';
 import type { CurrentUser } from '@/interface/auth.interface';
 
-const basePostUrl = import.meta.env.VITE_API_URL || "http://localhost:8082/api" + '/auth';
+const apiBase = "http://localhost:8082/api"; // ← PORT 8082!
+const basePostUrl = `${apiBase}/auth`;
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -21,13 +18,16 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   actions: {
-    // User Login
     async login(payload: LoginRequest) {
       this.loading = true;
       try {
+        // KIRIM LANGSUNG email & password (jangan di-map!)
         const response = await axios.post<CommonResponseInterface<{ token: string } & CurrentUser>>(
           `${basePostUrl}/login`,
-          payload
+          {
+            email: payload.email,  // ← LANGSUNG email
+            password: payload.password
+          }
         );
 
         const respData = response.data.data;
@@ -36,34 +36,34 @@ export const useAuthStore = defineStore('auth', {
         this.user = userFields as CurrentUser;
 
         toast.success(response.data.message || 'Login successful');
-        this.error = null;
-
-        // Store token and user in LocalStorage
         setLocalStorage('token', this.token);
         setLocalStorage('user', this.user);
-      } catch (error) {
-        this.error = error instanceof Error ? error.message : 'Unknown error';
-        toast.error(`Error saat memuat profil: ${this.error}`);
+        this.error = null;
+
+      } catch (error: any) {
+        const message = error.response?.data?.message || error.message || 'Unknown error';
+        this.error = message;
+        toast.error(`Login Gagal: ${message}`);
+        console.error('Login error:', error.response?.data); // ← Debug log
       } finally {
         this.loading = false;
       }
     },
 
-    // User Logout
     async logout() {
-      this.loading = true;
-      try {
-        clearLocalStorage();
-        this.user = null;
-        this.token = null;
-        toast.success('Logout successful');
-        this.error = null;
-      } catch (error) {
-        this.error = error instanceof Error ? error.message : 'Unknown error';
-        toast.error(`Error saat logout: ${this.error}`);
-      } finally {
-        this.loading = false;
-      }
-    },
+       this.loading = true;
+       try {
+         clearLocalStorage();
+         this.user = null;
+         this.token = null;
+         toast.success('Logout successful');
+         this.error = null;
+       } catch (error: any) {
+         this.error = error instanceof Error ? error.message : 'Unknown error';
+         toast.error(`Error saat logout: ${this.error}`);
+       } finally {
+         this.loading = false;
+       }
+    }
   },
 });

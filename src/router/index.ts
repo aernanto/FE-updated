@@ -9,7 +9,7 @@ import EditPlanView from '@/views/package/plan/EditPlanView.vue'
 import StatisticView from '@/views/statistic/StatisticView.vue'
 import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
-import { getCurrentUser, isAuthenticated, isSuperAdmin, UserRole } from '@/lib/rbac'
+import { getCurrentUser, isAuthenticated, UserRole } from '@/lib/rbac'
 import { toast } from 'vue-sonner'
 import UserManagementView from '@/views/users/UserManagementView.vue'
 import CustomerListView from '@/views/users/CustomerListView.vue'
@@ -20,6 +20,8 @@ import ActivitiesView from '@/views/activities/ActivitiesView.vue'
 import CreateActivityView from '@/views/activities/CreateActivityView.vue'
 import ActivityDetailView from '@/views/activities/ActivityDetailView.vue'
 import EditActivityView from '@/views/activities/EditActivityView.vue'
+import LoyaltyDashboardView from '@/views/loyalty/LoyaltyDashboardView.vue'
+import CouponManagementView from '@/views/loyalty/CouponManagementView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,6 +31,27 @@ const router = createRouter({
       name: "HomeView",
       component: HomeView,
     },
+
+    // ⭐ Loyalty
+    {
+      path: "/loyalty",
+      name: "LoyaltyDashboard",
+      component: LoyaltyDashboardView,
+      meta: {
+        requiresAuth: true,
+        roles: [UserRole.CUSTOMER],
+      },
+    },
+    {
+      path: "/loyalty/coupons/manage",
+      name: "CouponManagement",
+      component: CouponManagementView,
+      meta: {
+        requiresAuth: true,
+        roles: [UserRole.SUPERADMIN],
+      },
+    },
+
     {
       path: "/packages",
       name: "PackagesView",
@@ -217,7 +240,6 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         roles: [
-          // sesuai “Detail Activity” di tabel
           UserRole.CUSTOMER,
           UserRole.SUPERADMIN,
           UserRole.TOUR_PACKAGE_VENDOR,
@@ -251,16 +273,13 @@ router.beforeEach((to, from, next) => {
   const publicPaths = new Set<string>(["/", "/login", "/register"]);
   const auth = isAuthenticated();
 
-  // Public routes
   if (publicPaths.has(to.path)) {
-    // kalau sudah login, jangan balik ke login/register
     if ((to.path === "/login" || to.path === "/register") && auth) {
       return next("/");
     }
     return next();
   }
 
-  // Non-public → butuh auth
   if (!auth) {
     toast.error("Session expired. Please log in again.");
     return next("/login");
@@ -270,14 +289,12 @@ router.beforeEach((to, from, next) => {
   const roleUpper = currentUser?.roleName?.toUpperCase();
   const isSuperAdminUser = roleUpper === UserRole.SUPERADMIN;
 
-  // Role-based access jika meta.roles ada
   const allowedRoles = to.meta.roles as string[] | undefined;
   if (allowedRoles && roleUpper && !allowedRoles.includes(roleUpper)) {
     toast.error("You are not authorized to view this page");
     return next("/");
   }
 
-  // Unauthorized access ke profil orang lain (kecuali SuperAdmin)
   if ((to.name === "UserDetailView" || to.name === "UserEditView") && !isSuperAdminUser) {
     const paramId = to.params.id as string | undefined;
     if (paramId && currentUser && paramId !== currentUser.id) {
